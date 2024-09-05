@@ -1,41 +1,52 @@
-import { Controller, Delete, Get, Patch, Post, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+  NotFoundException,
+} from '@nestjs/common';
 import { TasksService } from './tasks.service';
+import { Task } from '@prisma/client';
 
-@Controller({})
-export class TaskController {
-  taskService: TasksService;
+@Controller('tasks')
+export class TasksController {
+  constructor(private readonly tasksService: TasksService) {}
 
-  constructor(taskServive: TasksService) {
-    this.taskService = taskServive;
+  @Get()
+  async findAll() {
+    return this.tasksService.getAllTask();
   }
 
-  @Get('/')
-  hello() {
-    return 'Pruebas';
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const taskFound = await this.tasksService.getTask(Number(id));
+    if (!taskFound) throw new NotFoundException('Task does not exist');
+    return taskFound;
   }
 
-  @Get('/tasks')
-  mostrarTodos() {
-    return this.taskService.getAll();
+  @Post()
+  async create(@Body() data: Task) {
+    return this.tasksService.createTask(data);
   }
 
-  @Post('/tasks')
-  crearTarea() {
-    return 'Creando Tarea';
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() data: Task) {
+    try {
+      return await this.tasksService.updateTask(Number(id), data);
+    } catch (error) {
+      throw new NotFoundException('Task does not exist');
+    }
   }
 
-  @Put('/tasks')
-  actualizarTarea() {
-    return 'Actualizando Tarea';
-  }
-
-  @Patch('/tasks')
-  actualizarParteDeTarea() {
-    return 'Actualizando Status';
-  }
-
-  @Delete('/tasks')
-  borrarTarea() {
-    return 'Borrando Tarea';
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    try {
+      return await this.tasksService.deleteTask(Number(id));
+    } catch (error) {
+      throw new NotFoundException('Task does not exist');
+    }
   }
 }
